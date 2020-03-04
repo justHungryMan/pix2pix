@@ -15,5 +15,7 @@ def to_variable(x):
         x = x.cuda()
     return x
 def denorm(x):
-    x = x / 2 + 0.5
-    return x.clamp(0, 1)
+    
+    return transforms.Compose([
+        transforms.Normalize((-2.12, -2.04, -1.80), (4.37, 4.46, 4.44))
+    ])(x)
