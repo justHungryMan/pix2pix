@@ -10,18 +10,16 @@ import glob
 import os
 import datetime
 
-from torch.utils.tensorboard import SummaryWriter
 
 from utils import *
 from network import Generator, Discriminator
 
-writer = SummaryWriter('runs/pix2pix')
 
 class image_preprocessing(Dataset):
     def __init__(self, root_dir):
         self.root_dir = root_dir
         self.transforms = transforms.Compose([
-            transforms.Resize((512, 256)),
+            transforms.Resize((256, 512)),
             transforms.ToTensor(),
             transforms.Normalize(mean=(0.485, 0.456, 0.406), 
                          std=(0.229, 0.224, 0.225))
@@ -34,10 +32,10 @@ class image_preprocessing(Dataset):
         AB = Image.open(AB_path)
 
         AB = self.transforms(AB)
-        # 512 * 256
-        _, w, h = AB.shape
-        A = AB[:, 0:int(w/2), :]
-        B = AB[:, int(w/2):w, :]
+        # 3 * 256 * 512
+        _, h, w = AB.shape
+        A = AB.clone().detach()[:, :, :int(w/2)]
+        B = AB.clone().detach()[:, :, int(w/2):]
         return {'A': A, 'B': B}
 
     def __len__(self):
@@ -68,6 +66,7 @@ def main():
         G = G.cuda()
         D = D.cuda()
 
+    print('[Start] : pix2pix Training')
     for epoch in range(args.epochs):
         for step, data in enumerate(data_loader):
             real_A = to_variable(data['A'])
@@ -96,8 +95,10 @@ def main():
 
             if (step + 1) % 100 == 0:
                 print("Epoch[{epoch}] |  Step [{now}/{total}] : D Loss : {D_loss}, G_losss : {G_loss}".format(epoch=epoch, now=step + 1, total=len(data_loader), D_loss=D_loss.item(), G_loss=G_loss.item()))
-                writer.add_scalar('D_loss', D_loss, epoch * len(data_loader) + step + 1)
-                writer.add_scalar('G_loss', G_loss, epoch * len(data_loader) + step + 1)
+               
+                #check 
+                batch_image = (torch.cat((torch.cat((real_A, fake_B), 3), real_B), 3))
+                torchvision.utils.save_image(denorm(batch_image[0]), './training_result/' + 'result_ep{epoch}_{step}.jpg'.format(epoch=epoch, step=(step + 1) * 4))
         
         torch.save(G.state_dict(), args.save_model + 'model_pix2pix_ep{epoch}'.format(epoch=epoch))
 
@@ -111,7 +112,7 @@ if __name__ == "__main__":
     parser.add_argument('--save_model', default='./data/', type=str, help='model save directory')
 
     parser.add_argument('--batch_size', default=4, type=int, help='batch size')
-    parser.add_argument('--epochs', default=4, type=int, help='epochs')
+    parser.add_argument('--epochs', default=10, type=int, help='epochs')
     parser.add_argument('--lr', default=0.0002, type=float, help='learning rate')
     parser.add_argument('--betas', default=(0.5, 0.999), type=tuple, help='betas default : (0.5, 0.999)')
     parser.add_argument('--lamda', default=100, type=int, help='lamda')
