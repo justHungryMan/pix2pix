@@ -16,6 +16,5 @@ def to_variable(x):
     return x
 def denorm(x):
     
-    return transforms.Compose([
-        transforms.Normalize((-2.12, -2.04, -1.80), (4.37, 4.46, 4.44))
-    ])(x)
+    denormalize = transforms.Normalize((-2.12, -2.04, -1.80), (4.37, 4.46, 4.44))
+    return denormalize(x).clamp(0, 1)
