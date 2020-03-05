@@ -61,10 +61,8 @@ def main():
         fake_B = G(real_A)
 
         batch_image = torch.cat((torch.cat((real_A, fake_B), 3), real_B), 3)
-        temp_image = real_B - fake_B
         for i in range(args.batch_size):
             torchvision.utils.save_image(denorm(batch_image[i]), args.save_path + 'result_{step}_undenorm.jpg'.format(step=step * 4 + i))
-            torchvision.utils.save_image(denorm(temp_image[i]), args.save_path + 'result_{step}_temp.jpg'.format(step=step * 4 + i))
 
 
 
