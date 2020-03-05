@@ -85,7 +85,7 @@ class Generator(nn.Module):
         self.conv128_256 = nn.Sequential(
             nn.ReLU(inplace=True),
             nn.ConvTranspose2d(64 * 2, 3, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm2d(3),
+            #nn.BatchNorm2d(3),
             nn.Tanh()
         )
     def forward(self, x):
