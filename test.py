@@ -11,8 +11,6 @@ import os
 import datetime
 import tqdm
 
-from torch.utils.tensorboard import SummaryWriter
-
 from utils import *
 from network import Generator, Discriminator
 
@@ -21,7 +19,7 @@ class image_preprocessing(Dataset):
     def __init__(self, root_dir):
         self.root_dir = root_dir
         self.transforms = transforms.Compose([
-            transforms.Resize((512, 256)),
+            transforms.Resize((256, 512)),
             transforms.ToTensor(),
             transforms.Normalize(mean=(0.485, 0.456, 0.406), 
                          std=(0.229, 0.224, 0.225))
@@ -35,7 +33,7 @@ class image_preprocessing(Dataset):
 
         AB = self.transforms(AB)
         # 3 * 256 * 512
-        _, w, h = AB.shape
+        _, h, w = AB.shape
         A = AB.clone().detach()[:, :, :int(w/2)]
         B = AB.clone().detach()[:, :, int(w/2):]
         return {'A': A, 'B': B}
@@ -62,9 +60,13 @@ def main():
         real_B = to_variable(data['B'])
         fake_B = G(real_A)
 
-        batch_image = denorm(torch.cat((torch.cat((real_A, fake_B), 3), real_B), 3))
+        batch_image = torch.cat((torch.cat((real_A, fake_B), 3), real_B), 3)
+        temp_image = real_B - fake_B
         for i in range(args.batch_size):
-            torchvision.utils.save_image(batch_image[i], args.save_path + 'result_{step}.jpg'.format(step=step * 4 + i))
+            torchvision.utils.save_image(denorm(batch_image[i]), args.save_path + 'result_{step}_undenorm.jpg'.format(step=step * 4 + i))
+            torchvision.utils.save_image(denorm(temp_image[i]), args.save_path + 'result_{step}_temp.jpg'.format(step=step * 4 + i))
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Pytorch pix2pix implementation')
