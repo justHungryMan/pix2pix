@@ -14,6 +14,8 @@ import tqdm
 from utils import *
 from network import Generator, Discriminator
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1, 2, 3" 
+
 
 class image_preprocessing(Dataset):
     def __init__(self, root_dir):
@@ -21,8 +23,9 @@ class image_preprocessing(Dataset):
         self.transforms = transforms.Compose([
             transforms.Resize((256, 512)),
             transforms.ToTensor(),
-            transforms.Normalize(mean=(0.485, 0.456, 0.406), 
-                         std=(0.229, 0.224, 0.225))
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            #transforms.Normalize(mean=(0.485, 0.456, 0.406), 
+             #            std=(0.229, 0.224, 0.225))
         ])
         self.dir_data = os.path.join(root_dir, 'val')
         self.image = glob.glob(os.path.join(root_dir, 'val') + '/*.jpg')
@@ -46,7 +49,12 @@ def main():
     data_loader = DataLoader(test_image_dataset, batch_size=args.batch_size,
                             shuffle=False, num_workers=args.num_workers)
     G = Generator()
-    G.load_state_dict(torch.load(args.model_path))
+    checkpoint = torch.load(args.model_path)
+
+    if torch.cuda.is_available():
+        G = nn.DataParallel(G)
+
+    G.load_state_dict(checkpoint['G_model'])
     G.eval()
 
     if not os.path.exists(args.save_path):
@@ -62,7 +70,7 @@ def main():
 
         batch_image = torch.cat((torch.cat((real_A, fake_B), 3), real_B), 3)
         for i in range(args.batch_size):
-            torchvision.utils.save_image(denorm(batch_image[i]), args.save_path + 'result_{step}_undenorm.jpg'.format(step=step * 4 + i))
+            torchvision.utils.save_image(denorm(batch_image[i]), args.save_path + '{result_name}_{step}.jpg'.format(result_name=args.result_name, step=step * args.batch_size + i))
 
 
 
@@ -74,6 +82,7 @@ if __name__ == "__main__":
     parser.add_argument('--model_path', required=True, type=str, help='model path')
     parser.add_argument('--batch_size', default=4, type=int, help='batch size')
     parser.add_argument('--num_workers', default=0, type=int, help='number of workers')
+    parser.add_argument('--result_name', default='maps', type=str, help='model saving name')
 
     args = parser.parse_args()
 
