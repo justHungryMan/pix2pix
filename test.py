@@ -24,8 +24,6 @@ class image_preprocessing(Dataset):
             transforms.Resize((256, 512)),
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-            #transforms.Normalize(mean=(0.485, 0.456, 0.406), 
-             #            std=(0.229, 0.224, 0.225))
         ])
         self.dir_data = os.path.join(root_dir, 'val')
         self.image = glob.glob(os.path.join(root_dir, 'val') + '/*.jpg')

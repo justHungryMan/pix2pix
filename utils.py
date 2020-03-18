@@ -16,5 +16,15 @@ def to_variable(x):
     return x
 def denorm(x):
     
-    denormalize = transforms.Normalize((-2.12, -2.04, -1.80), (4.37, 4.46, 4.44))
-    return denormalize(x).clamp(0, 1)
+    return ((x + 1) / 2).clamp(0, 1)
+
+def load_ckp(checkpoint_fpath, G, D, G_optimizer, D_optimizer):
+    checkpoint = torch.load(checkpoint_fpath)
+
+    G.load_state_dict(checkpoint['G_model'])
+    D.load_state_dict(checkpoint['D_model'])
+    G_optimizer.load_state_dict(checkpoint['G_optimizer'])
+    D_optimizer.load_state_dict(checkpoint['D_optimizer'])
+    epoch = checkpoint['epoch']
+
+    return G, D, G_optimizer, D_optimizer, epoch
